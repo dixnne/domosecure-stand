@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reto DomoSecure: Encuentra la Amenaza</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; user-select: none; overflow: hidden; }
+        
+        /* Animación de pulso para los clicks */
+        @keyframes ping {
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        .click-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(239, 68, 68, 0.5);
+            border: 2px solid red;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            animation: ping 0.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        /* Zona de juego */
+        #game-area {
+            cursor: crosshair;
+            position: relative;
+            background-image: url('./sala.png'); /* IMAGEN DE SALA DE ESTAR */
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Estilo de los "Hots-pots" (Áreas vulnerables invisibles) */
+        .vulnerability {
+            position: absolute;
+            /* border: 2px solid rgba(255, 0, 0, 0.3);  Descomentar para ver las cajas al probar */ 
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        /* Feedback visual al encontrar uno */
+        .found {
+            border: 4px solid #10B981 !important;
+            background-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 20px #10B981;
+            animation: none;
+        }
+        
+        .badge-found {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #10B981;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+            animation: bounce 0.5s;
+            z-index: 10;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white h-screen w-screen flex flex-col">
+
+    <!-- PANTALLA DE INICIO -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 bg-opacity-95 transition-opacity duration-500">
+        <div class="text-center max-w-2xl px-4">
+            <img src="logo.png" alt="Logo" class="h-24 mx-auto mb-6">
+            <h1 class="text-5xl md:text-7xl font-black text-white mb-4 tracking-tight">
+                ¿ERES MÁS RÁPIDO <br> <span class="text-blue-500">QUE UN HACKER?</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-8">
+                Tienes <span class="text-red-500 font-bold">15 segundos</span> para encontrar 4 dispositivos vulnerables en esta sala.
+            </p>
+            <button onclick="startGame()" class="bg-blue-600 hover:bg-blue-500 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105">
+                JUGAR AHORA
+            </button>
+        </div>
+    </div>
+
+    <!-- INTERFAZ DE JUEGO -->
+    <div class="flex justify-between items-center p-4 bg-gray-800 shadow-md z-10">
+        <div class="flex items-center">
+            <span class="text-2xl font-bold mr-2">TIEMPO:</span>
+            <span id="timer" class="text-4xl font-mono font-bold text-green-400">15.00</span>
+        </div>
+        <div class="text-center">
+            <h2 class="text-xl font-bold text-gray-400">OBJETIVOS ENCONTRADOS</h2>
+            <div class="flex gap-2 justify-center mt-1" id="score-dots">
+                <div class="w-4 h-4 rounded-full bg-gray-600 dot"></div>
+                <div class="w-4 h-4 rounded-full bg-gray-600 dot"></div>
+                <div class="w-4 h-4 rounded-full bg-gray-600 dot"></div>
+                <div class="w-4 h-4 rounded-full bg-gray-600 dot"></div>
+            </div>
+        </div>
+        <div>
+            <button onclick="resetGame()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm">Reiniciar</button>
+        </div>
+    </div>
+
+    <!-- ÁREA DE JUEGO (IMAGEN DE FONDO) -->
+    <div id="game-area" class="flex-grow relative w-full h-full overflow-hidden">
+        
+        <!-- ZONAS DE CLIC (Ajústalas según tu imagen si la cambias) -->
+        <!-- Usando porcentajes para que sea responsivo -->
+        
+        <!-- 1. Laptop en la mesa -->
+        <div class="vulnerability" style="top: 25%; left: 15%; width: 15%; height: 15%;" onclick="foundItem(this, 'Laptop: Webcam abierta')"></div>
+        
+        <!-- 2. Smart TV al fondo -->
+        <div class="vulnerability" style="top: 0%; left: 60%; width: 40%; height: 40%;" onclick="foundItem(this, 'Smart TV: Puerto inseguro')"></div>
+
+        <!-- 3. Router/Modem (Imaginario en estantería) -->
+        <div class="vulnerability" style="top: 90%; left: 30%; width: 20%; height: 10%;" onclick="foundItem(this, 'Router: Clave default')"></div>
+
+        <!-- 4. Asistente de Voz / Celular -->
+        <div class="vulnerability" style="top: 70%; left: 55%; width: 10%; height: 10%;" onclick="foundItem(this, 'Celular: Sin encriptar')"></div>
+
+    </div>
+
+    <!-- PANTALLA FINAL (MODAL) -->
+    <div id="end-screen" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 bg-opacity-95">
+        <div class="bg-white text-gray-900 p-8 rounded-2xl max-w-2xl w-full text-center shadow-2xl border-4 border-blue-600">
+            <div id="end-icon" class="text-6xl mb-4">🏆</div>
+            <h2 id="end-title" class="text-4xl font-black mb-2 text-blue-900">¡INCREÍBLE!</h2>
+            <p id="end-message" class="text-xl text-gray-600 mb-6">Encontraste todo en X segundos.</p>
+            
+            <div class="bg-gray-100 p-6 rounded-xl mb-8 text-left">
+                <p class="font-bold text-lg mb-2">La Realidad:</p>
+                <p class="text-gray-700 mb-4">Tuviste que buscar manualmente y con estrés. <br> <strong>DomoSecure lo hace automáticamente en 1 segundo.</strong></p>
+                <div class="flex items-center text-blue-700 font-bold">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Tranquilidad instantánea.
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-3 px-8 rounded-full w-full">
+                INTENTAR DE NUEVO
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 15.00;
+        let timerInterval;
+        let foundCount = 0;
+        const totalTargets = 4;
+        let isPlaying = false;
+
+        function startGame() {
+            document.getElementById('start-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('start-screen').style.display = 'none';
+                isPlaying = true;
+                startTimer();
+            }, 500);
+        }
+
+        function startTimer() {
+            const timerElement = document.getElementById('timer');
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft -= 0.01;
+                    timerElement.textContent = timeLeft.toFixed(2);
+                    if (timeLeft < 5) timerElement.classList.replace('text-green-400', 'text-red-500');
+                } else {
+                    endGame(false);
+                }
+            }, 10);
+        }
+
+        function foundItem(element, labelText) {
+            if (!isPlaying || element.classList.contains('found')) return;
+
+            // Marcar como encontrado
+            element.classList.add('found');
+            
+            // Mostrar etiqueta
+            const badge = document.createElement('div');
+            badge.className = 'badge-found';
+            badge.textContent = labelText;
+            element.appendChild(badge);
+
+            // Actualizar puntos
+            foundCount++;
+            updateDots();
+
+            // Verificar victoria
+            if (foundCount === totalTargets) {
+                endGame(true);
+            }
+        }
+
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            for(let i=0; i<foundCount; i++) {
+                dots[i].classList.remove('bg-gray-600');
+                dots[i].classList.add('bg-green-500');
+            }
+        }
+
+        function endGame(win) {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            
+            const endScreen = document.getElementById('end-screen');
+            const endTitle = document.getElementById('end-title');
+            const endMessage = document.getElementById('end-message');
+            const endIcon = document.getElementById('end-icon');
+
+            endScreen.classList.remove('hidden');
+
+            if (win) {
+                const timeTaken = (15.00 - timeLeft).toFixed(2);
+                endTitle.textContent = "¡AMENAZA DETECTADA!";
+                endMessage.innerHTML = `Te tomó <strong>${timeTaken} segundos</strong> encontrar los riesgos. <br>DomoSecure lo hubiera hecho en 0.5 segundos.`;
+                endIcon.textContent = "🛡️";
+            } else {
+                endTitle.textContent = "DEMASIADO TARDE...";
+                endTitle.className = "text-4xl font-black mb-2 text-red-600";
+                endMessage.innerHTML = "El tiempo se agotó. Tu red habría sido vulnerada.<br><strong>No dejes tu seguridad al azar.</strong>";
+                endIcon.textContent = "⚠️";
+            }
+        }
+
+        function resetGame() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>

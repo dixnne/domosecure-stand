@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reto DomoSecure: Verdad o Hackeo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body { font-family: 'Poppins', sans-serif; overflow: hidden; }
+        
+        /* Fondo animado tipo Matrix sutil */
+        .bg-pattern {
+            background-color: #0f172a;
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Estilo de la Tarjeta */
+        .card {
+            transition: transform 0.3s, opacity 0.3s;
+            backface-visibility: hidden;
+        }
+
+        /* Animaciones de Respuesta */
+        .swipe-right { animation: backOutRight 0.5s forwards; }
+        .swipe-left { animation: backOutLeft 0.5s forwards; }
+
+        /* Barra de Racha */
+        .streak-bar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-pattern text-white h-screen w-screen flex flex-col items-center justify-center relative selection:bg-blue-500 selection:text-white">
+
+    <!-- LOGO HEADER -->
+    <div class="absolute top-8 left-0 right-0 text-center opacity-80">
+        <img src="logo.png" alt="DomoSecure" class="h-12 mx-auto mb-2">
+        <p class="text-blue-400 text-sm tracking-widest uppercase font-bold">Zona de Entrenamiento</p>
+    </div>
+
+    <!-- PANTALLA DE INICIO -->
+    <div id="start-screen" class="text-center z-50 max-w-2xl px-6 animate__animated animate__fadeIn">
+        <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-4">
+            VERDAD O<br>HACKEO
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed">
+            ¿Crees que sabes de ciberseguridad? <br>
+            Acierta <span class="text-yellow-400 font-bold text-3xl">3 seguidas</span> y gana un premio.
+        </p>
+        <button onclick="startGame()" class="bg-white text-slate-900 text-2xl font-black py-4 px-12 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform">
+            ¡ACEPTO EL RETO!
+        </button>
+    </div>
+
+    <!-- PANTALLA DE JUEGO -->
+    <div id="game-screen" class="hidden w-full max-w-md mx-auto px-4 relative z-40">
+        
+        <!-- Indicador de Racha -->
+        <div class="mb-8">
+            <div class="flex justify-between text-sm font-bold text-gray-400 mb-2">
+                <span>RACHA ACTUAL</span>
+                <span id="streak-text" class="text-yellow-400">0 / 3</span>
+            </div>
+            <div class="h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-600">
+                <div id="streak-progress" class="h-full bg-gradient-to-r from-yellow-400 to-orange-500 w-0 streak-bar"></div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Pregunta -->
+        <div id="question-card" class="bg-white text-slate-900 rounded-3xl p-8 shadow-2xl min-h-[300px] flex flex-col justify-center items-center text-center relative overflow-hidden card">
+            <!-- Decoración de fondo de tarjeta -->
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+            
+            <h2 id="question-text" class="text-2xl md:text-3xl font-bold mb-6 leading-snug">
+                Cargando pregunta...
+            </h2>
+            
+            <!-- Icono de estado (Feedback) -->
+            <div id="feedback-icon" class="text-6xl mb-4 hidden animate__animated animate__zoomIn"></div>
+            <p id="feedback-text" class="text-lg text-gray-600 hidden animate__animated animate__fadeIn"></p>
+        </div>
+
+        <!-- Botones de Respuesta -->
+        <div id="controls" class="flex gap-4 mt-8">
+            <button onclick="answer(true)" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-black py-6 rounded-2xl text-xl shadow-lg transition-transform active:scale-95 flex flex-col items-center">
+                <span class="text-3xl mb-1">👍</span>
+                VERDADERO
+            </button>
+            <button onclick="answer(false)" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-black py-6 rounded-2xl text-xl shadow-lg transition-transform active:scale-95 flex flex-col items-center">
+                <span class="text-3xl mb-1">👎</span>
+                FALSO
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE VICTORIA (PREMIO) -->
+    <div id="win-screen" class="hidden absolute inset-0 z-50 bg-gradient-to-b from-yellow-500 to-orange-600 flex flex-col items-center justify-center text-center p-6 animate__animated animate__fadeIn">
+        <div class="animate__animated animate__bounceIn">
+            <div class="text-8xl mb-4">🎁</div>
+            <h2 class="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-md">¡GANASTE!</h2>
+            <p class="text-2xl text-white font-bold mb-8">Demostraste que sabes protegerte.</p>
+            
+            <div class="bg-white text-orange-600 p-6 rounded-2xl shadow-2xl max-w-sm mx-auto transform rotate-1">
+                <p class="text-sm uppercase tracking-bold font-bold text-gray-400">PREMIO DESBLOQUEADO</p>
+                <p class="text-3xl font-black mt-2">TAPA-WEBCAM <br> DE PRIVACIDAD</p>
+                <p class="text-sm mt-4 text-gray-600">Solicítalo ahora al staff de DomoSecure.</p>
+            </div>
+        </div>
+        
+        <button onclick="location.reload()" class="mt-12 bg-black text-white font-bold py-3 px-8 rounded-full hover:bg-gray-800 transition shadow-xl">
+            Jugar de Nuevo
+        </button>
+    </div>
+
+    <!-- PANTALLA DE DERROTA (RESET) -->
+    <div id="lose-overlay" class="hidden absolute inset-0 z-50 bg-black bg-opacity-90 flex flex-col items-center justify-center text-center p-6">
+        <div class="text-6xl mb-4 animate__animated animate__shakeX">❌</div>
+        <h2 class="text-4xl font-bold text-red-500 mb-2">¡UPS! TE EQUIVOCASTE</h2>
+        <p id="explanation-text" class="text-xl text-gray-300 max-w-md mb-8">Explicación del error aquí.</p>
+        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-8">
+            <p class="text-blue-400 font-bold">DomoSecure te hubiera alertado de esto.</p>
+        </div>
+        <button onclick="resetGame()" class="bg-white text-black font-bold py-3 px-10 rounded-full hover:bg-gray-200">
+            INTENTAR OTRA VEZ
+        </button>
+    </div>
+
+    <script>
+        // Base de datos de preguntas
+        // isTrue: true si la afirmación es VERDADERA, false si es FALSA (Mito)
+        const questions = [
+            {
+                text: "Los hackers pueden hablarte a través de tu cámara de bebé.",
+                isTrue: true,
+                explanation: "¡Es real! Si usas la contraseña de fábrica, cualquiera puede acceder al audio y video."
+            },
+            {
+                text: "El modo 'Incógnito' te hace invisible para tu proveedor de internet.",
+                isTrue: false,
+                explanation: "Falso. Solo borra el historial de TU computadora. Tu proveedor e internet siguen viendo todo."
+            },
+            {
+                text: "Un banco real NUNCA te pedirá tu contraseña por correo electrónico.",
+                isTrue: true,
+                explanation: "Correcto. Si un correo te pide claves, es un ataque de Phishing."
+            },
+            {
+                text: "Es seguro revisar tu cuenta bancaria en el Wi-Fi del aeropuerto.",
+                isTrue: false,
+                explanation: "¡Peligroso! Las redes públicas son fáciles de interceptar. Usa tus datos móviles."
+            },
+            {
+                text: "Las contraseñas de 8 caracteres son seguras hoy en día.",
+                isTrue: false,
+                explanation: "Mito. Una computadora moderna puede descifrar 8 caracteres en minutos. Usa frases largas."
+            },
+            {
+                text: "Tener un antivirus significa que no necesitas actualizar tu sistema.",
+                isTrue: false,
+                explanation: "Falso. Las actualizaciones corrigen fallos de seguridad que el antivirus no puede tapar."
+            },
+            {
+                text: "Si tu computadora es lenta, podría estar minando criptomonedas para un hacker.",
+                isTrue: true,
+                explanation: "Verdad. Es un ataque común llamado 'Cryptojacking'."
+            },
+            {
+                text: "Mac y iPhone son inmunes a los virus.",
+                isTrue: false,
+                explanation: "Mito. Aunque son seguros, sí existen virus diseñados específicamente para Apple."
+            }
+        ];
+
+        let currentStreak = 0;
+        let currentQuestion = null;
+        const goalStreak = 3;
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            currentStreak = 0;
+            updateStreakUI();
+            loadRandomQuestion();
+        }
+
+        function loadRandomQuestion() {
+            // Elegir pregunta al azar
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            currentQuestion = questions[randomIndex];
+            
+            // Resetear UI de la tarjeta
+            const card = document.getElementById('question-card');
+            card.className = "bg-white text-slate-900 rounded-3xl p-8 shadow-2xl min-h-[300px] flex flex-col justify-center items-center text-center relative overflow-hidden card animate__animated animate__fadeInUp";
+            
+            document.getElementById('question-text').textContent = currentQuestion.text;
+            document.getElementById('question-text').classList.remove('hidden');
+            
+            document.getElementById('feedback-icon').classList.add('hidden');
+            document.getElementById('feedback-text').classList.add('hidden');
+            document.getElementById('controls').classList.remove('pointer-events-none', 'opacity-50');
+        }
+
+        function answer(userSaidTrue) {
+            // Bloquear botones temporalmente
+            document.getElementById('controls').classList.add('pointer-events-none', 'opacity-50');
+
+            const isCorrect = (userSaidTrue === currentQuestion.isTrue);
+
+            if (isCorrect) {
+                handleCorrect();
+            } else {
+                handleIncorrect();
+            }
+        }
+
+        function handleCorrect() {
+            // Feedback visual en tarjeta
+            const card = document.getElementById('question-card');
+            document.getElementById('question-text').classList.add('hidden');
+            
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackText = document.getElementById('feedback-text');
+            
+            feedbackIcon.textContent = "✅";
+            feedbackIcon.className = "text-6xl mb-4 animate__animated animate__bounceIn text-green-500";
+            feedbackIcon.classList.remove('hidden');
+            
+            feedbackText.textContent = "¡Correcto!";
+            feedbackText.className = "text-2xl font-bold text-green-600 animate__animated animate__fadeIn";
+            feedbackText.classList.remove('hidden');
+
+            // Lógica de juego
+            currentStreak++;
+            updateStreakUI();
+
+            setTimeout(() => {
+                if (currentStreak >= goalStreak) {
+                    showWinScreen();
+                } else {
+                    loadRandomQuestion();
+                }
+            }, 1200);
+        }
+
+        function handleIncorrect() {
+            const loseOverlay = document.getElementById('lose-overlay');
+            const explText = document.getElementById('explanation-text');
+            
+            explText.textContent = currentQuestion.explanation;
+            loseOverlay.classList.remove('hidden');
+            loseOverlay.classList.add('animate__animated', 'animate__fadeIn');
+        }
+
+        function updateStreakUI() {
+            const percentage = (currentStreak / goalStreak) * 100;
+            document.getElementById('streak-progress').style.width = `${percentage}%`;
+            document.getElementById('streak-text').textContent = `${currentStreak} / ${goalStreak}`;
+        }
+
+        function showWinScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.remove('hidden');
+        }
+
+        function resetGame() {
+            document.getElementById('lose-overlay').classList.add('hidden');
+            currentStreak = 0;
+            updateStreakUI();
+            loadRandomQuestion();
+        }
+    </script>
+</body>
+</html>
